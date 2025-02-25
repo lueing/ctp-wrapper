@@ -1,0 +1,13 @@
+{
+  "dependencies": [
+    "gtest",
+    "fmt",
+    "yaml-cpp",
+    "abseil",
+    "spdlog",
+    "libiconv",
+    "libpqxx",
+    "cli11",
+    "boost"
+  ]
+}

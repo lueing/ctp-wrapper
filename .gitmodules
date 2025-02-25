@@ -1,0 +1,3 @@
+[submodule "lueing-common"]
+	path = lueing-common
+	url = https://github.com/lueing/lueing-common.git

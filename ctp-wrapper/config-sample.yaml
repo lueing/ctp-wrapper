@@ -1,0 +1,43 @@
+client_access:
+  # 经纪公司代码
+  BrokerID: ""
+  # 用户代码
+  UserID: "1234"
+  # 用户端产品信息
+  UserProductInfo: "client_xxxxx_1.0.0"
+  # 认证码
+  AuthCode: ""
+  # App代码
+  AppID: "client_xxxxx_1.0.0"
+
+user_access:
+  # 交易日
+  TradingDay: ""
+  # 经纪公司代码
+  BrokerID: ""
+  # 用户代码
+  UserID: "1234"
+  # 密码
+  Password: "guessme"
+  # 用户端产品信息
+  UserProductInfo: ""
+  # 接口端产品信息
+  InterfaceProductInfo: ""
+  # 协议信息
+  ProtocolInfo: ""
+  # Mac地址
+  MacAddress: ""
+  # 动态密码
+  OneTimePassword: ""
+  # 保留 (这里用来存 InvestorID)
+  reserve1: "5601"
+  # 登录备注
+  LoginRemark: "test"
+  # 终端端口
+  ClientIPPort: "54321"
+  # 终端IP
+  ClientIPAddress: "106.14.xxx.75"
+
+connect_info:
+  front_hq_address: "tcp://xxx.37.xx.177:20004"
+
