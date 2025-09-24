@@ -4,13 +4,17 @@
 
 lueing::CtpTx::CtpTx(CtpConfigPtr config) : tx_handler_(std::move(config))
 {
+    tx_handler_.CreateTxContext();
+}
+
+double lueing::CtpTx::Order(const std::string& contract, lueing::TxDirection direction, int amt) {
+    return tx_handler_.Order(contract, direction, amt);
 }
 
 lueing::CtpTx::~CtpTx() = default;
 
 lueing::CtpTxHandler::CtpTxHandler(CtpConfigPtr config) : config_(std::move(config))
 {
-    CreateTxContext();
 }
 
 lueing::CtpTxHandler::~CtpTxHandler()
@@ -75,6 +79,74 @@ void lueing::CtpTxHandler::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserL
         pRspUserLogin->UserID,
         pRspUserLogin->SystemName));
     events_.Notify(EVENT_TX_LOGIN);
+}
+
+double lueing::CtpTxHandler::Order(const std::string &contract, lueing::TxDirection direction, int amt) {
+    CThostFtdcInputOrderField ord = {};
+    int orderRef = config_->tx_request_id.fetch_add(1);
+    double price = -1;
+
+    strcpy(ord.BrokerID, config_->m_userPrincipal.BrokerID);
+    strcpy(ord.InvestorID, config_->m_userPrincipal.reserve1);
+    strcpy(ord.InstrumentID, contract.c_str());
+    strcpy(ord.UserID, config_->m_userPrincipal.UserID);
+    sprintf(ord.OrderRef, "%d", orderRef);
+
+    ord.OrderPriceType = THOST_FTDC_OPT_AnyPrice;
+    ord.Direction = direction;
+    ord.CombOffsetFlag[0] = THOST_FTDC_OF_Open;
+    ord.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
+    ord.LimitPrice = 0;                                  // 价格, 可以不填
+    ord.VolumeTotalOriginal = amt;
+    ord.TimeCondition = THOST_FTDC_TC_IOC;               // 立即完成，否则撤销
+    ord.VolumeCondition = THOST_FTDC_VC_CV;              // 全部数量
+    ord.MinVolume = 1;
+    ord.ContingentCondition = THOST_FTDC_CC_Immediately; //立即
+    ord.ForceCloseReason = THOST_FTDC_FCC_NotForceClose; //非强平
+    ord.IsAutoSuspend = 0;
+    int a = user_tx_api_->ReqOrderInsert(&ord, config_->tx_request_id.fetch_add(1));
+    spdlog::info(fmt::format((a == 0) ? "[TX] 报单成功，序号=[{}], 合约:{} 数量:{} 方向: {}" : "[TX] 报单失败，序号=[{}] 合约:{} 数量:{}",
+                             a, contract, amt, TX_PUT == direction ? "空" : "多"));
+
+    std::string order = fmt::format("{}", orderRef);
+    events_.Wait(contract, fmt::format("{}", order));
+
+    auto it = trade_data_.find(order);
+
+    if (it != trade_data_.end()) {
+        int total_volume = 0;
+        double total_price = 0;
+        for (const auto& trade : it->second) {
+            total_volume += trade.Volume;
+            total_price += trade.Price * trade.Volume;
+        }
+        if (total_volume > 0) {
+            price = total_price / total_volume;
+        }
+    }    
+
+    // round to 2 decimal places
+    if (price > 0) {
+        price = std::round(price * 100) / 100.0;
+    }
+    return price;
+}
+
+void lueing::CtpTxHandler::OnRtnTrade(CThostFtdcTradeField *pTrade) {
+    if (nullptr == pTrade) {
+        return;
+    }
+    spdlog::info(fmt::format("[TX] 成交，合约:{} 数量:{} 价格:{}", pTrade->InstrumentID, pTrade->Volume, pTrade->Price));
+    trade_data_[pTrade->OrderRef].push_back(*pTrade);
+    if (trade_data_.contains(pTrade->OrderRef)) {
+        events_.Notify(pTrade->InstrumentID);
+    }
+}
+
+void lueing::CtpTxHandler::OnRtnOrder(CThostFtdcOrderField *pOrder) {
+    if (THOST_FTDC_OST_AllTraded == pOrder->OrderStatus) {
+        trade_finish_.emplace(pOrder->OrderRef);
+    }
 }
 
 // Empty implementations for all CThostFtdcTraderSpi methods
@@ -176,8 +248,8 @@ void lueing::CtpTxHandler::OnRspQryCombAction(CThostFtdcCombActionField *pCombAc
 void lueing::CtpTxHandler::OnRspQryTransferSerial(CThostFtdcTransferSerialField *pTransferSerial, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {}
 void lueing::CtpTxHandler::OnRspQryAccountregister(CThostFtdcAccountregisterField *pAccountregister, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {}
 void lueing::CtpTxHandler::OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {}
-void lueing::CtpTxHandler::OnRtnOrder(CThostFtdcOrderField *pOrder) {}
-void lueing::CtpTxHandler::OnRtnTrade(CThostFtdcTradeField *pTrade) {}
+// void lueing::CtpTxHandler::OnRtnOrder(CThostFtdcOrderField *pOrder) {}
+// void lueing::CtpTxHandler::OnRtnTrade(CThostFtdcTradeField *pTrade) {}
 void lueing::CtpTxHandler::OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo) {}
 void lueing::CtpTxHandler::OnErrRtnOrderAction(CThostFtdcOrderActionField *pOrderAction, CThostFtdcRspInfoField *pRspInfo) {}
 void lueing::CtpTxHandler::OnRtnInstrumentStatus(CThostFtdcInstrumentStatusField *pInstrumentStatus) {}

@@ -6,24 +6,32 @@
 #include "events.h"
 #include "ThostFtdcTraderApi.h"
 
-namespace lueing
-{
-#define EVENT_TX_LOGIN "EVENT_TX_LOGIN"
+namespace lueing {
 
-    class CtpTxHandler : public CThostFtdcTraderSpi
-    {
+#define EVENT_TX_LOGIN "EVENT_TX_LOGIN"
+#define TX_PUT '0'
+#define TX_CALL '1'
+
+    typedef char TxDirection;
+
+    class CtpTxHandler : public CThostFtdcTraderSpi {
     private:
         CtpConfigPtr config_;
         LueingIconv gbk_to_utf8_converter_;
         Events events_;
+        absl::node_hash_map<std::string, std::vector<CThostFtdcTradeField>> trade_data_;
+        absl::node_hash_set<std::string> trade_finish_;
         CThostFtdcTraderApi *user_tx_api_ = nullptr;
 
     public:
         explicit CtpTxHandler(CtpConfigPtr config);
+
         ~CtpTxHandler();
 
     public:
         void CreateTxContext();
+
+        double Order(const std::string &contract, TxDirection direction, int amt);       
 
     public:
         /// 当客户端与交易后台建立起通信连接时（还未登录前），该方法被调用。
@@ -47,8 +55,9 @@ namespace lueing
                                int nRequestID, bool bIsLast) override;
 
         /// 登录请求响应
-        void OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
-                            bool bIsLast) override;
+        void
+        OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+                       bool bIsLast) override;
 
         /// 登出请求响应
         void OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
@@ -56,12 +65,14 @@ namespace lueing
 
         /// 用户口令更新请求响应
         void
-        OnRspUserPasswordUpdate(CThostFtdcUserPasswordUpdateField *pUserPasswordUpdate, CThostFtdcRspInfoField *pRspInfo,
+        OnRspUserPasswordUpdate(CThostFtdcUserPasswordUpdateField *pUserPasswordUpdate,
+                                CThostFtdcRspInfoField *pRspInfo,
                                 int nRequestID, bool bIsLast) override;
 
         /// 资金账户口令更新请求响应
-        void OnRspTradingAccountPasswordUpdate(CThostFtdcTradingAccountPasswordUpdateField *pTradingAccountPasswordUpdate,
-                                               CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
+        void
+        OnRspTradingAccountPasswordUpdate(CThostFtdcTradingAccountPasswordUpdateField *pTradingAccountPasswordUpdate,
+                                          CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
 
         /// 查询用户当前支持的认证模式的回复
         void OnRspUserAuthMethod(CThostFtdcRspUserAuthMethodField *pRspUserAuthMethod, CThostFtdcRspInfoField *pRspInfo,
@@ -73,7 +84,8 @@ namespace lueing
 
         /// 获取短信验证码请求的回复
         void
-        OnRspGenUserText(CThostFtdcRspGenUserTextField *pRspGenUserText, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+        OnRspGenUserText(CThostFtdcRspGenUserTextField *pRspGenUserText, CThostFtdcRspInfoField *pRspInfo,
+                         int nRequestID,
                          bool bIsLast) override;
 
         /// 报单录入请求响应
@@ -82,28 +94,32 @@ namespace lueing
 
         /// 预埋单录入请求响应
         void
-        OnRspParkedOrderInsert(CThostFtdcParkedOrderField *pParkedOrder, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+        OnRspParkedOrderInsert(CThostFtdcParkedOrderField *pParkedOrder, CThostFtdcRspInfoField *pRspInfo,
+                               int nRequestID,
                                bool bIsLast) override;
 
         /// 预埋撤单录入请求响应
-        void OnRspParkedOrderAction(CThostFtdcParkedOrderActionField *pParkedOrderAction, CThostFtdcRspInfoField *pRspInfo,
-                                    int nRequestID, bool bIsLast) override;
+        void
+        OnRspParkedOrderAction(CThostFtdcParkedOrderActionField *pParkedOrderAction, CThostFtdcRspInfoField *pRspInfo,
+                               int nRequestID, bool bIsLast) override;
 
         /// 报单操作请求响应
         void OnRspOrderAction(CThostFtdcInputOrderActionField *pInputOrderAction, CThostFtdcRspInfoField *pRspInfo,
                               int nRequestID, bool bIsLast) override;
 
         /// 查询最大报单数量响应
-        void OnRspQryMaxOrderVolume(CThostFtdcQryMaxOrderVolumeField *pQryMaxOrderVolume, CThostFtdcRspInfoField *pRspInfo,
-                                    int nRequestID, bool bIsLast) override;
+        void
+        OnRspQryMaxOrderVolume(CThostFtdcQryMaxOrderVolumeField *pQryMaxOrderVolume, CThostFtdcRspInfoField *pRspInfo,
+                               int nRequestID, bool bIsLast) override;
 
         /// 投资者结算结果确认响应
         void OnRspSettlementInfoConfirm(CThostFtdcSettlementInfoConfirmField *pSettlementInfoConfirm,
                                         CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
 
         /// 删除预埋单响应
-        void OnRspRemoveParkedOrder(CThostFtdcRemoveParkedOrderField *pRemoveParkedOrder, CThostFtdcRspInfoField *pRspInfo,
-                                    int nRequestID, bool bIsLast) override;
+        void
+        OnRspRemoveParkedOrder(CThostFtdcRemoveParkedOrderField *pRemoveParkedOrder, CThostFtdcRspInfoField *pRspInfo,
+                               int nRequestID, bool bIsLast) override;
 
         /// 删除预埋撤单响应
         void OnRspRemoveParkedOrderAction(CThostFtdcRemoveParkedOrderActionField *pRemoveParkedOrderAction,
@@ -115,12 +131,14 @@ namespace lueing
 
         /// 执行宣告操作请求响应
         void
-        OnRspExecOrderAction(CThostFtdcInputExecOrderActionField *pInputExecOrderAction, CThostFtdcRspInfoField *pRspInfo,
+        OnRspExecOrderAction(CThostFtdcInputExecOrderActionField *pInputExecOrderAction,
+                             CThostFtdcRspInfoField *pRspInfo,
                              int nRequestID, bool bIsLast) override;
 
         /// 询价录入请求响应
         void
-        OnRspForQuoteInsert(CThostFtdcInputForQuoteField *pInputForQuote, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+        OnRspForQuoteInsert(CThostFtdcInputForQuoteField *pInputForQuote, CThostFtdcRspInfoField *pRspInfo,
+                            int nRequestID,
                             bool bIsLast) override;
 
         /// 报价录入请求响应
@@ -156,8 +174,9 @@ namespace lueing
                            bool bIsLast) override;
 
         /// 请求查询投资者持仓响应
-        void OnRspQryInvestorPosition(CThostFtdcInvestorPositionField *pInvestorPosition, CThostFtdcRspInfoField *pRspInfo,
-                                      int nRequestID, bool bIsLast) override;
+        void
+        OnRspQryInvestorPosition(CThostFtdcInvestorPositionField *pInvestorPosition, CThostFtdcRspInfoField *pRspInfo,
+                                 int nRequestID, bool bIsLast) override;
 
         /// 请求查询资金账户响应
         void OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTradingAccount, CThostFtdcRspInfoField *pRspInfo,
@@ -168,8 +187,9 @@ namespace lueing
                               bool bIsLast) override;
 
         /// 请求查询交易编码响应
-        void OnRspQryTradingCode(CThostFtdcTradingCodeField *pTradingCode, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
-                                 bool bIsLast) override;
+        void
+        OnRspQryTradingCode(CThostFtdcTradingCodeField *pTradingCode, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+                            bool bIsLast) override;
 
         /// 请求查询合约保证金率响应
         void OnRspQryInstrumentMarginRate(CThostFtdcInstrumentMarginRateField *pInstrumentMarginRate,
@@ -188,16 +208,18 @@ namespace lueing
                              bool bIsLast) override;
 
         /// 请求查询合约响应
-        void OnRspQryInstrument(CThostFtdcInstrumentField *pInstrument, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
-                                bool bIsLast) override;
+        void
+        OnRspQryInstrument(CThostFtdcInstrumentField *pInstrument, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+                           bool bIsLast) override;
 
         /// 请求查询行情响应
         void OnRspQryDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData, CThostFtdcRspInfoField *pRspInfo,
                                      int nRequestID, bool bIsLast) override;
 
         /// 请求查询交易员报盘机响应
-        void OnRspQryTraderOffer(CThostFtdcTraderOfferField *pTraderOffer, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
-                                 bool bIsLast) override;
+        void
+        OnRspQryTraderOffer(CThostFtdcTraderOfferField *pTraderOffer, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+                            bool bIsLast) override;
 
         /// 请求查询投资者结算结果响应
         void OnRspQrySettlementInfo(CThostFtdcSettlementInfoField *pSettlementInfo, CThostFtdcRspInfoField *pRspInfo,
@@ -205,7 +227,8 @@ namespace lueing
 
         /// 请求查询转帐银行响应
         void
-        OnRspQryTransferBank(CThostFtdcTransferBankField *pTransferBank, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+        OnRspQryTransferBank(CThostFtdcTransferBankField *pTransferBank, CThostFtdcRspInfoField *pRspInfo,
+                             int nRequestID,
                              bool bIsLast) override;
 
         /// 请求查询投资者持仓明细响应
@@ -222,8 +245,9 @@ namespace lueing
 
         /// 请求查询投资者持仓明细响应
         void
-        OnRspQryInvestorPositionCombineDetail(CThostFtdcInvestorPositionCombineDetailField *pInvestorPositionCombineDetail,
-                                              CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
+        OnRspQryInvestorPositionCombineDetail(
+                CThostFtdcInvestorPositionCombineDetailField *pInvestorPositionCombineDetail,
+                CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
 
         /// 查询保证金监管系统经纪公司资金账户密钥响应
         void OnRspQryCFMMCTradingAccountKey(CThostFtdcCFMMCTradingAccountKeyField *pCFMMCTradingAccountKey,
@@ -235,11 +259,13 @@ namespace lueing
 
         /// 请求查询投资者品种/跨品种保证金响应
         void OnRspQryInvestorProductGroupMargin(CThostFtdcInvestorProductGroupMarginField *pInvestorProductGroupMargin,
-                                                CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
+                                                CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+                                                bool bIsLast) override;
 
         /// 请求查询交易所保证金率响应
         void
-        OnRspQryExchangeMarginRate(CThostFtdcExchangeMarginRateField *pExchangeMarginRate, CThostFtdcRspInfoField *pRspInfo,
+        OnRspQryExchangeMarginRate(CThostFtdcExchangeMarginRateField *pExchangeMarginRate,
+                                   CThostFtdcRspInfoField *pRspInfo,
                                    int nRequestID, bool bIsLast) override;
 
         /// 请求查询交易所调整保证金率响应
@@ -248,7 +274,8 @@ namespace lueing
 
         /// 请求查询汇率响应
         void
-        OnRspQryExchangeRate(CThostFtdcExchangeRateField *pExchangeRate, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+        OnRspQryExchangeRate(CThostFtdcExchangeRateField *pExchangeRate, CThostFtdcRspInfoField *pRspInfo,
+                             int nRequestID,
                              bool bIsLast) override;
 
         /// 请求查询二级代理操作员银期权限响应
@@ -261,12 +288,14 @@ namespace lueing
 
         /// 请求查询产品组
         void
-        OnRspQryProductGroup(CThostFtdcProductGroupField *pProductGroup, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+        OnRspQryProductGroup(CThostFtdcProductGroupField *pProductGroup, CThostFtdcRspInfoField *pRspInfo,
+                             int nRequestID,
                              bool bIsLast) override;
 
         /// 请求查询做市商合约手续费率响应
         void OnRspQryMMInstrumentCommissionRate(CThostFtdcMMInstrumentCommissionRateField *pMMInstrumentCommissionRate,
-                                                CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
+                                                CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+                                                bool bIsLast) override;
 
         /// 请求查询做市商期权合约手续费响应
         void OnRspQryMMOptionInstrCommRate(CThostFtdcMMOptionInstrCommRateField *pMMOptionInstrCommRate,
@@ -283,12 +312,14 @@ namespace lueing
 
         /// 请求查询二级代理商资金校验模式响应
         void
-        OnRspQrySecAgentCheckMode(CThostFtdcSecAgentCheckModeField *pSecAgentCheckMode, CThostFtdcRspInfoField *pRspInfo,
+        OnRspQrySecAgentCheckMode(CThostFtdcSecAgentCheckModeField *pSecAgentCheckMode,
+                                  CThostFtdcRspInfoField *pRspInfo,
                                   int nRequestID, bool bIsLast) override;
 
         /// 请求查询二级代理商信息响应
         void
-        OnRspQrySecAgentTradeInfo(CThostFtdcSecAgentTradeInfoField *pSecAgentTradeInfo, CThostFtdcRspInfoField *pRspInfo,
+        OnRspQrySecAgentTradeInfo(CThostFtdcSecAgentTradeInfoField *pSecAgentTradeInfo,
+                                  CThostFtdcRspInfoField *pRspInfo,
                                   int nRequestID, bool bIsLast) override;
 
         /// 请求查询期权交易成本响应
@@ -316,8 +347,9 @@ namespace lueing
                                      int nRequestID, bool bIsLast) override;
 
         /// 请求查询投资单元响应
-        void OnRspQryInvestUnit(CThostFtdcInvestUnitField *pInvestUnit, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
-                                bool bIsLast) override;
+        void
+        OnRspQryInvestUnit(CThostFtdcInvestUnitField *pInvestUnit, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+                           bool bIsLast) override;
 
         void OnRspQrySPBMFutureParameter(CThostFtdcSPBMFutureParameterField *pSPBMFutureParameter,
                                          CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
@@ -326,11 +358,13 @@ namespace lueing
                                          CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
 
         void
-        OnRspQrySPBMIntraParameter(CThostFtdcSPBMIntraParameterField *pSPBMIntraParameter, CThostFtdcRspInfoField *pRspInfo,
+        OnRspQrySPBMIntraParameter(CThostFtdcSPBMIntraParameterField *pSPBMIntraParameter,
+                                   CThostFtdcRspInfoField *pRspInfo,
                                    int nRequestID, bool bIsLast) override;
 
         void
-        OnRspQrySPBMInterParameter(CThostFtdcSPBMInterParameterField *pSPBMInterParameter, CThostFtdcRspInfoField *pRspInfo,
+        OnRspQrySPBMInterParameter(CThostFtdcSPBMInterParameterField *pSPBMInterParameter,
+                                   CThostFtdcRspInfoField *pRspInfo,
                                    int nRequestID, bool bIsLast) override;
 
         void OnRspQrySPBMPortfDefinition(CThostFtdcSPBMPortfDefinitionField *pSPBMPortfDefinition,
@@ -345,18 +379,20 @@ namespace lueing
         void OnRspQryInvestorProdSPBMDetail(CThostFtdcInvestorProdSPBMDetailField *pInvestorProdSPBMDetail,
                                             CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
 
-        void OnRspQryInvestorCommoditySPMMMargin(CThostFtdcInvestorCommoditySPMMMarginField *pInvestorCommoditySPMMMargin,
-                                                 CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
+        void
+        OnRspQryInvestorCommoditySPMMMargin(CThostFtdcInvestorCommoditySPMMMarginField *pInvestorCommoditySPMMMargin,
+                                            CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
 
         void OnRspQryInvestorCommodityGroupSPMMMargin(
-            CThostFtdcInvestorCommodityGroupSPMMMarginField *pInvestorCommodityGroupSPMMMargin,
-            CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
+                CThostFtdcInvestorCommodityGroupSPMMMarginField *pInvestorCommodityGroupSPMMMargin,
+                CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
 
         void OnRspQrySPMMInstParam(CThostFtdcSPMMInstParamField *pSPMMInstParam, CThostFtdcRspInfoField *pRspInfo,
                                    int nRequestID, bool bIsLast) override;
 
-        void OnRspQrySPMMProductParam(CThostFtdcSPMMProductParamField *pSPMMProductParam, CThostFtdcRspInfoField *pRspInfo,
-                                      int nRequestID, bool bIsLast) override;
+        void
+        OnRspQrySPMMProductParam(CThostFtdcSPMMProductParamField *pSPMMProductParam, CThostFtdcRspInfoField *pRspInfo,
+                                 int nRequestID, bool bIsLast) override;
 
         void OnRspQrySPBMAddOnInterParameter(CThostFtdcSPBMAddOnInterParameterField *pSPBMAddOnInterParameter,
                                              CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
@@ -383,15 +419,18 @@ namespace lueing
                                              CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
 
         void
-        OnRspQryRULEInstrParameter(CThostFtdcRULEInstrParameterField *pRULEInstrParameter, CThostFtdcRspInfoField *pRspInfo,
+        OnRspQryRULEInstrParameter(CThostFtdcRULEInstrParameterField *pRULEInstrParameter,
+                                   CThostFtdcRspInfoField *pRspInfo,
                                    int nRequestID, bool bIsLast) override;
 
         void
-        OnRspQryRULEIntraParameter(CThostFtdcRULEIntraParameterField *pRULEIntraParameter, CThostFtdcRspInfoField *pRspInfo,
+        OnRspQryRULEIntraParameter(CThostFtdcRULEIntraParameterField *pRULEIntraParameter,
+                                   CThostFtdcRspInfoField *pRspInfo,
                                    int nRequestID, bool bIsLast) override;
 
         void
-        OnRspQryRULEInterParameter(CThostFtdcRULEInterParameterField *pRULEInterParameter, CThostFtdcRspInfoField *pRspInfo,
+        OnRspQryRULEInterParameter(CThostFtdcRULEInterParameterField *pRULEInterParameter,
+                                   CThostFtdcRspInfoField *pRspInfo,
                                    int nRequestID, bool bIsLast) override;
 
         void OnRspQryInvestorProdRULEMargin(CThostFtdcInvestorProdRULEMarginField *pInvestorProdRULEMargin,
@@ -402,8 +441,9 @@ namespace lueing
                                          CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
 
         /// 请求查询申请组合响应
-        void OnRspQryCombAction(CThostFtdcCombActionField *pCombAction, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
-                                bool bIsLast) override;
+        void
+        OnRspQryCombAction(CThostFtdcCombActionField *pCombAction, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+                           bool bIsLast) override;
 
         /// 请求查询转帐流水响应
         void OnRspQryTransferSerial(CThostFtdcTransferSerialField *pTransferSerial, CThostFtdcRspInfoField *pRspInfo,
@@ -445,7 +485,8 @@ namespace lueing
 
         /// 执行宣告录入错误回报
         void
-        OnErrRtnExecOrderInsert(CThostFtdcInputExecOrderField *pInputExecOrder, CThostFtdcRspInfoField *pRspInfo) override;
+        OnErrRtnExecOrderInsert(CThostFtdcInputExecOrderField *pInputExecOrder,
+                                CThostFtdcRspInfoField *pRspInfo) override;
 
         /// 执行宣告操作错误回报
         void OnErrRtnExecOrderAction(CThostFtdcExecOrderActionField *pExecOrderAction,
@@ -494,16 +535,19 @@ namespace lueing
 
         /// 请求查询签约银行响应
         void
-        OnRspQryContractBank(CThostFtdcContractBankField *pContractBank, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+        OnRspQryContractBank(CThostFtdcContractBankField *pContractBank, CThostFtdcRspInfoField *pRspInfo,
+                             int nRequestID,
                              bool bIsLast) override;
 
         /// 请求查询预埋单响应
-        void OnRspQryParkedOrder(CThostFtdcParkedOrderField *pParkedOrder, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
-                                 bool bIsLast) override;
+        void
+        OnRspQryParkedOrder(CThostFtdcParkedOrderField *pParkedOrder, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+                            bool bIsLast) override;
 
         /// 请求查询预埋撤单响应
         void
-        OnRspQryParkedOrderAction(CThostFtdcParkedOrderActionField *pParkedOrderAction, CThostFtdcRspInfoField *pRspInfo,
+        OnRspQryParkedOrderAction(CThostFtdcParkedOrderActionField *pParkedOrderAction,
+                                  CThostFtdcRspInfoField *pRspInfo,
                                   int nRequestID, bool bIsLast) override;
 
         /// 请求查询交易通知响应
@@ -516,7 +560,8 @@ namespace lueing
 
         /// 请求查询经纪公司交易算法响应
         void
-        OnRspQryBrokerTradingAlgos(CThostFtdcBrokerTradingAlgosField *pBrokerTradingAlgos, CThostFtdcRspInfoField *pRspInfo,
+        OnRspQryBrokerTradingAlgos(CThostFtdcBrokerTradingAlgosField *pBrokerTradingAlgos,
+                                   CThostFtdcRspInfoField *pRspInfo,
                                    int nRequestID, bool bIsLast) override;
 
         /// 请求查询监控中心用户令牌
@@ -553,11 +598,13 @@ namespace lueing
 
         /// 期货发起银行资金转期货错误回报
         void
-        OnErrRtnBankToFutureByFuture(CThostFtdcReqTransferField *pReqTransfer, CThostFtdcRspInfoField *pRspInfo) override;
+        OnErrRtnBankToFutureByFuture(CThostFtdcReqTransferField *pReqTransfer,
+                                     CThostFtdcRspInfoField *pRspInfo) override;
 
         /// 期货发起期货资金转银行错误回报
         void
-        OnErrRtnFutureToBankByFuture(CThostFtdcReqTransferField *pReqTransfer, CThostFtdcRspInfoField *pRspInfo) override;
+        OnErrRtnFutureToBankByFuture(CThostFtdcReqTransferField *pReqTransfer,
+                                     CThostFtdcRspInfoField *pRspInfo) override;
 
         /// 系统运行时期货端手工发起冲正银行转期货错误回报
         void OnErrRtnRepealBankToFutureByFutureManual(CThostFtdcReqRepealField *pReqRepeal,
@@ -587,7 +634,8 @@ namespace lueing
 
         /// 期货发起查询银行余额应答
         void OnRspQueryBankAccountMoneyByFuture(CThostFtdcReqQueryAccountField *pReqQueryAccount,
-                                                CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
+                                                CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+                                                bool bIsLast) override;
 
         /// 银行发起银期开户通知
         void OnRtnOpenAccountByBank(CThostFtdcOpenAccountField *pOpenAccount) override;
@@ -604,7 +652,8 @@ namespace lueing
 
         /// 请求组合优惠比例响应
         void
-        OnRspQryCombPromotionParam(CThostFtdcCombPromotionParamField *pCombPromotionParam, CThostFtdcRspInfoField *pRspInfo,
+        OnRspQryCombPromotionParam(CThostFtdcCombPromotionParamField *pCombPromotionParam,
+                                   CThostFtdcRspInfoField *pRspInfo,
                                    int nRequestID, bool bIsLast) override;
 
         /// 投资者风险结算持仓查询响应
@@ -616,15 +665,17 @@ namespace lueing
                                              CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
     };
 
-    class CtpTx
-    {
+    class CtpTx {
     private:
         CtpTxHandler tx_handler_;
 
     public:
         explicit CtpTx(CtpConfigPtr config);
+
         ~CtpTx();
+
     public:
+        double Order(const std::string &contract, TxDirection direction, int amt);
     };
 }
 
