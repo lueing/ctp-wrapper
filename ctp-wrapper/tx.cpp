@@ -8,13 +8,9 @@ lueing::CtpTx::CtpTx(CtpConfigPtr config) : tx_handler_(std::move(config))
 
 lueing::CtpTx::~CtpTx() = default;
 
-void lueing::CtpTx::CreateTxContext()
-{
-    tx_handler_.CreateTxContext();
-}
-
 lueing::CtpTxHandler::CtpTxHandler(CtpConfigPtr config) : config_(std::move(config))
 {
+    CreateTxContext();
 }
 
 lueing::CtpTxHandler::~CtpTxHandler()

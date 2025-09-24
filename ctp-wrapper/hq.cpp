@@ -5,15 +5,15 @@
 #include <utility>
 #include "lueing_os.h"
 
-lueing::ProviderCtp::ProviderCtp(CtpConfigPtr config) : hq_handler_(std::move(config))
+lueing::CtpHq::CtpHq(CtpConfigPtr config) : hq_handler_(std::move(config))
 {
-    hq_handler_.Init();
+    hq_handler_.CreateHqContext();
 }
 
-lueing::ProviderCtp::~ProviderCtp()
+lueing::CtpHq::~CtpHq()
 = default;
 
-int lueing::ProviderCtp::SubscribeMarketData(const std::string &instrument, const std::string &subscriber)
+int lueing::CtpHq::SubscribeMarketData(const std::string &instrument, const std::string &subscriber)
 {
     std::unique_lock<std::mutex> lock(lock_);
     if (instruments_booked_.contains(instrument))
@@ -36,7 +36,7 @@ int lueing::ProviderCtp::SubscribeMarketData(const std::string &instrument, cons
     return result;
 }
 
-int lueing::ProviderCtp::UnSubscribeMarketData(const std::string &instrument, const std::string &subscriber)
+int lueing::CtpHq::UnSubscribeMarketData(const std::string &instrument, const std::string &subscriber)
 {
     std::unique_lock<std::mutex> lock(lock_);
     int result = 0;
@@ -70,12 +70,12 @@ int lueing::ProviderCtp::UnSubscribeMarketData(const std::string &instrument, co
     return result;
 }
 
-void lueing::ProviderCtp::WaitForData(const std::string &instrument, const std::string &subscriber)
+void lueing::CtpHq::WaitForData(const std::string &instrument, const std::string &subscriber)
 {
     hq_handler_.GetEvents().Wait(instrument, subscriber);
 }
 
-void lueing::CtpHqHandler::Init()
+void lueing::CtpHqHandler::CreateHqContext()
 {
 #define HQ_FLOW_PATH "./flow-hq/"
 
@@ -92,7 +92,7 @@ void lueing::CtpHqHandler::Init()
     events_.WaitOnce(EVENT_LOGIN);
 }
 
-lueing::CtpHqHandler::CtpHqHandler(std::shared_ptr<CtpConfig> config) : config_(std::move(config))
+lueing::CtpHqHandler::CtpHqHandler(CtpConfigPtr config) : config_(std::move(config))
 {
 }
 

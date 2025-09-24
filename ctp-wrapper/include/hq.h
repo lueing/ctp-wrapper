@@ -11,7 +11,7 @@
 namespace lueing {
     class CtpHqHandler : public CThostFtdcMdSpi {
     public:
-        void Init();
+        void CreateHqContext();
 
         Events &GetEvents() { return events_; }
 
@@ -23,50 +23,43 @@ namespace lueing {
         std::mutex &MarketDataLock() { return market_data_lock_; }
 
     public:
-        explicit CtpHqHandler(std::shared_ptr<CtpConfig> config);
-
+        explicit CtpHqHandler(CtpConfigPtr config);
         ~CtpHqHandler();
 
     public:
-        virtual void OnFrontConnected() override;
+        void OnFrontConnected() override;
 
-        virtual void OnFrontDisconnected(int nReason) override;
+        void OnFrontDisconnected(int nReason) override;
 
-        virtual void OnHeartBeatWarning(int nTimeLapse) override;
+        void OnHeartBeatWarning(int nTimeLapse) override;
 
-        virtual void
-        OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+        void OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
                        bool bIsLast) override;
 
-        virtual void
-        OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+        void OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
                         bool bIsLast) override;
 
-        virtual void OnRspQryMulticastInstrument(CThostFtdcMulticastInstrumentField *pMulticastInstrument,
+        void OnRspQryMulticastInstrument(CThostFtdcMulticastInstrumentField *pMulticastInstrument,
                                                  CThostFtdcRspInfoField *pRspInfo, int nRequestID,
                                                  bool bIsLast) override;
 
-        virtual void OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
+        void OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
 
-        virtual void
-        OnRspSubMarketData(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
+        void OnRspSubMarketData(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
                            int nRequestID, bool bIsLast) override;
 
-        virtual void
-        OnRspUnSubMarketData(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
+        void OnRspUnSubMarketData(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
                              int nRequestID, bool bIsLast) override;
 
-        virtual void
-        OnRspSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
+        void OnRspSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
                             int nRequestID, bool bIsLast) override;
 
-        virtual void
-        OnRspUnSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
+        void OnRspUnSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
                               int nRequestID, bool bIsLast) override;
 
-        virtual void OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData) override;
+        void OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData) override;
 
-        virtual void OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp) override;
+        void OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp) override;
 
     private:
         void ReqUserLogin();
@@ -80,16 +73,16 @@ namespace lueing {
         std::mutex market_data_lock_;
     };
 
-    class ProviderCtp {
+    class CtpHq {
     private:
         std::mutex lock_;
         CtpHqHandler hq_handler_;
         absl::node_hash_map<std::string, absl::node_hash_set<std::string>> instruments_booked_;
 
     public:
-        explicit ProviderCtp(CtpConfigPtr config);
+        explicit CtpHq(CtpConfigPtr config);
 
-        ~ProviderCtp();
+        ~CtpHq();
 
     public:
         // 订阅行情
@@ -107,7 +100,7 @@ namespace lueing {
         std::mutex &MarketDataLock() { return hq_handler_.MarketDataLock(); }
     };
 
-    typedef std::shared_ptr<ProviderCtp> ProviderCtpPtr;
+    typedef std::shared_ptr<CtpHq> ProviderCtpPtr;
 
 } // namespace lueing
 

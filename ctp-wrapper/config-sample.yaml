@@ -40,4 +40,5 @@ user_access:
 
 connect_info:
   front_hq_address: "tcp://xxx.37.xx.177:20004"
+  front_trade_address: "tcp://xxx.37.xx.177:11207"
 

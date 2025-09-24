@@ -6,7 +6,7 @@
 
 TEST(HQTest, main) {
     auto config = lueing::CreateCtpConfig("ctp.yaml");
-    lueing::ProviderCtp ctp(config);
+    lueing::CtpHq ctp(config);
 
     ctp.SubscribeMarketData("ag2504", "test01");
 

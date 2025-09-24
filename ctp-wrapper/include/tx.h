@@ -19,7 +19,7 @@ namespace lueing
         CThostFtdcTraderApi *user_tx_api_ = nullptr;
 
     public:
-        CtpTxHandler(CtpConfigPtr config);
+        explicit CtpTxHandler(CtpConfigPtr config);
         ~CtpTxHandler();
 
     public:
@@ -625,7 +625,6 @@ namespace lueing
         explicit CtpTx(CtpConfigPtr config);
         ~CtpTx();
     public:
-        void CreateTxContext();
     };
 }
 
