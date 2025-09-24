@@ -9,8 +9,8 @@
 namespace lueing {
 
 #define EVENT_TX_LOGIN "EVENT_TX_LOGIN"
-#define TX_PUT '0'
-#define TX_CALL '1'
+#define TX_PUT '1'
+#define TX_CALL '0'
 
     typedef char TxDirection;
 
