@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.22)
 project(wrapper)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -33,7 +33,7 @@ find_package(yaml-cpp CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(absl CONFIG REQUIRED)
 find_package(Boost 1.86.0 REQUIRED)
-set(SOURCES config.cpp events.cpp hq.cpp)
+set(SOURCES config.cpp events.cpp hq.cpp tx.cpp)
 
 add_library(ctp_wrap STATIC ${SOURCES})
 target_include_directories(ctp_wrap PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
