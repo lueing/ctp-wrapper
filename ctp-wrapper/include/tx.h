@@ -2,18 +2,28 @@
 #define LUEING_CTP_TX_H
 
 #include "config.h"
+#include "lueing_iconv.h"
+#include "events.h"
 #include "ThostFtdcTraderApi.h"
 
 namespace lueing
 {
+#define EVENT_TX_LOGIN "EVENT_TX_LOGIN"
+
     class CtpTxHandler : public CThostFtdcTraderSpi
     {
     private:
         CtpConfigPtr config_;
+        LueingIconv gbk_to_utf8_converter_;
+        Events events_;
+        CThostFtdcTraderApi *user_tx_api_ = nullptr;
 
     public:
         CtpTxHandler(CtpConfigPtr config);
         ~CtpTxHandler();
+
+    public:
+        void CreateTxContext();
 
     public:
         /// 当客户端与交易后台建立起通信连接时（还未登录前），该方法被调用。

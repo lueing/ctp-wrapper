@@ -1,4 +1,6 @@
 #include "tx.h"
+#include <fmt/core.h>
+#include "spdlog/spdlog.h"
 
 lueing::CtpTx::CtpTx(CtpConfigPtr config) : tx_handler_(std::move(config))
 {
@@ -12,14 +14,73 @@ lueing::CtpTxHandler::CtpTxHandler(CtpConfigPtr config) : config_(std::move(conf
 
 lueing::CtpTxHandler::~CtpTxHandler()
 {
+    if (nullptr != user_tx_api_) {
+        return;
+    }
+    user_tx_api_->Release();
+    user_tx_api_ = nullptr;
+}
+
+void lueing::CtpTxHandler::CreateTxContext()
+{
+    if (nullptr != user_tx_api_) {
+        return;
+    }
+    user_tx_api_ = CThostFtdcTraderApi::CreateFtdcTraderApi("./flow-tx");
+    user_tx_api_->RegisterSpi(this);
+    user_tx_api_->SubscribePrivateTopic(THOST_TERT_QUICK);
+    user_tx_api_->SubscribePublicTopic(THOST_TERT_QUICK);
+    user_tx_api_->RegisterFront(const_cast<char*>(config_->front_trade_address.c_str()));
+    user_tx_api_->Init();
+
+    events_.WaitOnce(EVENT_TX_LOGIN);
+}
+
+void lueing::CtpTxHandler::OnFrontConnected() {
+    int result = user_tx_api_->ReqAuthenticate(&config_->m_clientPrincipal, config_->tx_request_id.fetch_add(1));
+    if (0 == result) {
+        spdlog::info(fmt::format("[TX] FrontConnected and invoke check client success."));
+    } else {
+        spdlog::error(fmt::format("[TX] FrontConnected but invoke check client failed."));
+    }
+}
+
+void lueing::CtpTxHandler::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuthenticateField, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
+    if (pRspInfo->ErrorID != 0) {
+        spdlog::error(fmt::format("[TX] Client check failed. ErrorID=[{}], ErrorMsg=[{}]", pRspInfo->ErrorID, pRspInfo->ErrorMsg));
+        return;
+    }
+    spdlog::info(fmt::format("[TX] Client check success."));
+    // => 客户端认证成功后，发起登录请求
+    int result = user_tx_api_->ReqUserLogin(&config_->m_userPrincipal, config_->tx_request_id.fetch_add(1));
+    if (0 == result) {
+        spdlog::info(fmt::format("[TX] Invoke user login success."));
+    } else {
+        spdlog::error(fmt::format("[TX] Invoke user login failed."));
+    }
+}
+
+void lueing::CtpTxHandler::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
+    if (pRspInfo->ErrorID != 0) {
+        std::string error_msg = gbk_to_utf8_converter_.GBK2UTF8(pRspInfo->ErrorMsg);
+        spdlog::error(fmt::format("[TX] User login failed. ErrorID=[{}], ErrorMsg=[{}]", pRspInfo->ErrorID, error_msg));
+        return;
+    }
+    spdlog::info(fmt::format("[TX] User login success. TradingDay=[{}], LoginTime=[{}], BrokerID=[{}], UserID=[{}], SystemName=[{}]",
+        pRspUserLogin->TradingDay,
+        pRspUserLogin->LoginTime,
+        pRspUserLogin->BrokerID,
+        pRspUserLogin->UserID,
+        pRspUserLogin->SystemName));
+    events_.Notify(EVENT_TX_LOGIN);
 }
 
 // Empty implementations for all CThostFtdcTraderSpi methods
-void lueing::CtpTxHandler::OnFrontConnected() {}
+// void lueing::CtpTxHandler::OnFrontConnected() {}
 void lueing::CtpTxHandler::OnFrontDisconnected(int nReason) {}
 void lueing::CtpTxHandler::OnHeartBeatWarning(int nTimeLapse) {}
-void lueing::CtpTxHandler::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuthenticateField, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {}
-void lueing::CtpTxHandler::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {}
+// void lueing::CtpTxHandler::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuthenticateField, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {}
+// void lueing::CtpTxHandler::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {}
 void lueing::CtpTxHandler::OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {}
 void lueing::CtpTxHandler::OnRspUserPasswordUpdate(CThostFtdcUserPasswordUpdateField *pUserPasswordUpdate, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {}
 void lueing::CtpTxHandler::OnRspTradingAccountPasswordUpdate(CThostFtdcTradingAccountPasswordUpdateField *pTradingAccountPasswordUpdate, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {}
