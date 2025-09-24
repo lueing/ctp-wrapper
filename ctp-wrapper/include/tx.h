@@ -624,6 +624,8 @@ namespace lueing
     public:
         explicit CtpTx(CtpConfigPtr config);
         ~CtpTx();
+    public:
+        void CreateTxContext();
     };
 }
 

@@ -8,6 +8,11 @@ lueing::CtpTx::CtpTx(CtpConfigPtr config) : tx_handler_(std::move(config))
 
 lueing::CtpTx::~CtpTx() = default;
 
+void lueing::CtpTx::CreateTxContext()
+{
+    tx_handler_.CreateTxContext();
+}
+
 lueing::CtpTxHandler::CtpTxHandler(CtpConfigPtr config) : config_(std::move(config))
 {
 }
@@ -47,7 +52,8 @@ void lueing::CtpTxHandler::OnFrontConnected() {
 
 void lueing::CtpTxHandler::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuthenticateField, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
     if (pRspInfo->ErrorID != 0) {
-        spdlog::error(fmt::format("[TX] Client check failed. ErrorID=[{}], ErrorMsg=[{}]", pRspInfo->ErrorID, pRspInfo->ErrorMsg));
+        std::string error_msg = gbk_to_utf8_converter_.GBK2UTF8(pRspInfo->ErrorMsg);
+        spdlog::error(fmt::format("[TX] Client check failed. ErrorID=[{}], ErrorMsg=[{}]", pRspInfo->ErrorID, error_msg));
         return;
     }
     spdlog::info(fmt::format("[TX] Client check success."));
