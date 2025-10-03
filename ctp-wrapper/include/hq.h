@@ -1,8 +1,9 @@
-#ifndef LUEING_DATA_PROVIDER_CTP_HQ_H
-#define LUEING_DATA_PROVIDER_CTP_HQ_H
+#ifndef LUEING_DATA_CTP_HQ_H
+#define LUEING_DATA_CTP_HQ_H
 
 #include "config.h"
 #include <memory>
+#include <vector>
 
 #include "ThostFtdcMdApi.h"
 #include "events.h"
@@ -100,8 +101,30 @@ namespace lueing {
         std::mutex &MarketDataLock() { return hq_handler_.MarketDataLock(); }
     };
 
-    typedef std::shared_ptr<CtpHq> ProviderCtpPtr;
+    typedef std::shared_ptr<CtpHq> CtpHqPtr;
+
+    struct StockQuote {
+        double price;
+        long long volume;
+        double turnover;
+        double open;
+        double high;
+        double low;
+        double pre_close;
+        long long time;
+        char code[16];
+    };
+
+    class Level1Hq {
+    private:
+        std::vector<std::string> svc_address_;
+    public:
+        explicit Level1Hq(const CtpConfigPtr& config);
+        ~Level1Hq();
+    public:
+        void poll(const std::vector<std::string>& codes, bool validate, std::vector<StockQuote> &out_quotes);
+    };
 
 } // namespace lueing
 
-#endif // LUEING_DATA_PROVIDER_CTP_HQ_H
+#endif // LUEING_DATA_CTP_HQ_H

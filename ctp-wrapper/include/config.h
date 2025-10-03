@@ -4,6 +4,7 @@
 #include <string>
 #include <atomic>
 #include <memory>
+#include <vector>
 #include "ThostFtdcUserApiStruct.h"
 
 namespace lueing
@@ -16,6 +17,8 @@ namespace lueing
         std::string front_trade_address;
         std::atomic_int32_t hq_request_id;
         std::atomic_int32_t tx_request_id;
+
+        std::vector<std::string> level1_hq_services;
     };
     typedef struct CtpConfig CtpConfig;
     typedef std::shared_ptr<CtpConfig> CtpConfigPtr;

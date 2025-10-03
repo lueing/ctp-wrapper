@@ -43,6 +43,15 @@ lueing::CtpConfigPtr lueing::CreateCtpConfig(const std::string &yaml_file)
     config->front_hq_address = yaml["connect_info"]["front_hq_address"].as<std::string>();
     // connect to trade
     config->front_trade_address = yaml["connect_info"]["front_trade_address"].as<std::string>();
+    // level1 hq services
+    if (yaml["connect_info"]["level1_hq_services"])
+    {
+        config->level1_hq_services = yaml["connect_info"]["level1_hq_services"].as<std::vector<std::string>>();
+    }
+    else
+    {
+        config->level1_hq_services = {};
+    }
 
     return config;
 }

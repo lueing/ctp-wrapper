@@ -33,6 +33,8 @@ find_package(yaml-cpp CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(absl CONFIG REQUIRED)
 find_package(Boost 1.86.0 REQUIRED)
+find_package(cpr CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 set(SOURCES config.cpp events.cpp hq.cpp tx.cpp)
 
 add_library(ctp_wrap STATIC ${SOURCES})
@@ -41,7 +43,7 @@ if (BUILD_TTS)
     message(STATUS "Comiple with tts")
     target_link_libraries(ctp_wrap PUBLIC
             spdlog::spdlog fmt::fmt-header-only spdlog::spdlog_header_only
-            yaml-cpp::yaml-cpp
+            yaml-cpp::yaml-cpp cpr::cpr nlohmann_json::nlohmann_json
             absl::node_hash_map
             lueing_common
             thostmduserapi_se_tts thosttraderapi_se_tts)
@@ -51,13 +53,14 @@ if (BUILD_TTS)
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${CMAKE_CURRENT_SOURCE_DIR}/lib/v672/win64/thostmduserapi_se.dll"
                 "${CMAKE_CURRENT_SOURCE_DIR}/lib/v672/win64/thosttraderapi_se.dll"
+                "${CMAKE_CURRENT_SOURCE_DIR}/config-sample.yaml"
                 $<TARGET_FILE_DIR:ctp_wrap>)
     endif ()
 elseif (BUILD_SQ)
     message(STATUS "Comiple with sq")
     target_link_libraries(ctp_wrap PUBLIC
             spdlog::spdlog fmt::fmt-header-only spdlog::spdlog_header_only
-            yaml-cpp::yaml-cpp
+            yaml-cpp::yaml-cpp cpr::cpr nlohmann_json::nlohmann_json
             absl::node_hash_map
             lueing_common
             thostmduserapi_se_sq thosttraderapi_se_sq)

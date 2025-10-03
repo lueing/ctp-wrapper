@@ -8,6 +8,8 @@
     "libiconv",
     "libpqxx",
     "cli11",
-    "boost"
+    "boost",
+    "cpr",
+    "nlohmann-json"
   ]
 }

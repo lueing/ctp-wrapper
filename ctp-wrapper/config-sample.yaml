@@ -41,4 +41,6 @@ user_access:
 connect_info:
   front_hq_address: "tcp://xxx.37.xx.177:20004"
   front_trade_address: "tcp://xxx.37.xx.177:11207"
+  level1_hq_services:
+    - "http://127.0.0.1:8083/now"
 

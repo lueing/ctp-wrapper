@@ -1,6 +1,9 @@
 #include "hq.h"
 
 #include <spdlog/spdlog.h>
+#include <cpr/cpr.h>
+#include <fmt/ranges.h>
+#include <nlohmann/json.hpp>
 
 #include <utility>
 #include "lueing_os.h"
@@ -183,5 +186,50 @@ void lueing::CtpHqHandler::ReqUserLogin()
     else
     {
         spdlog::info(fmt::format("[行情接口][登录中...] 登录调用失败, 返回码: {}", result_code));
+    }
+}
+
+lueing::Level1Hq::Level1Hq(const lueing::CtpConfigPtr& config) {
+    this->svc_address_ = config->level1_hq_services;
+}
+
+lueing::Level1Hq::~Level1Hq() = default;
+
+void lueing::Level1Hq::poll(const std::vector<std::string>& codes, bool validate, std::vector<StockQuote> &out_quotes) {
+    // randomly select a service address
+    if (svc_address_.empty()) {
+        spdlog::error("No service addresses available.");
+        return;
+    }
+    // Shuffle the service addresses and pick the first one
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(svc_address_.begin(), svc_address_.end(), g);
+    const std::string& address = svc_address_.front();
+    // Make the HTTP GET request
+    std::string joined_codes = fmt::format("{}", fmt::join(codes, ","));
+    cpr::Response r = cpr::Get(cpr::Url{ address }, cpr::Parameters{{"codes", joined_codes}, {"validate", validate ? "true" : "false"}});
+    if (r.status_code != 200) {
+        spdlog::error("Failed to fetch data from {}: HTTP {}", address, r.status_code);
+        return;
+    }
+    // Parse the JSON response
+    try {
+        auto json_response = nlohmann::json::parse(r.text);
+        for (const auto& item : json_response["data"]) {
+            StockQuote quote{};
+            quote.price = item.value("lastPrice", 0.0);
+            quote.volume = item.value("amount", 0LL);
+            quote.turnover = item.value("money", 0.0);
+            quote.open = item.value("open", 0.0);
+            quote.high = item.value("high", 0.0);
+            quote.low = item.value("low", 0.0);
+            quote.pre_close = item.value("preClose", 0.0);
+            quote.time = item.value("time", 0LL);
+            strcpy(quote.code, item.value("code", "").c_str());
+            out_quotes.push_back(quote);
+        }
+    } catch (const std::exception& e) {
+        spdlog::error("JSON parsing error: {}", e.what());
     }
 }
