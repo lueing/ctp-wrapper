@@ -2,7 +2,7 @@ client_access:
   # 经纪公司代码
   BrokerID: ""
   # 用户代码
-  UserID: "1234"
+  UserID: "5601"
   # 用户端产品信息
   UserProductInfo: "client_xxxxx_1.0.0"
   # 认证码
@@ -16,9 +16,9 @@ user_access:
   # 经纪公司代码
   BrokerID: ""
   # 用户代码
-  UserID: "1234"
+  UserID: "5601"
   # 密码
-  Password: "guessme"
+  Password: "123456"
   # 用户端产品信息
   UserProductInfo: ""
   # 接口端产品信息
@@ -39,8 +39,8 @@ user_access:
   ClientIPAddress: "106.14.xxx.75"
 
 connect_info:
-  front_hq_address: "tcp://xxx.37.xx.177:20004"
-  front_trade_address: "tcp://xxx.37.xx.177:11207"
+  front_hq_address: "tcp://724.openctp.cn:30011"
+  front_trade_address: "tcp://724.openctp.cn:30001"
   level1_hq_services:
     - "http://127.0.0.1:8083/now"
 

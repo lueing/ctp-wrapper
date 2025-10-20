@@ -195,7 +195,7 @@ lueing::Level1Hq::Level1Hq(const lueing::CtpConfigPtr& config) {
 
 lueing::Level1Hq::~Level1Hq() = default;
 
-void lueing::Level1Hq::poll(const std::vector<std::string>& codes, bool validate, std::vector<StockQuote> &out_quotes) {
+void lueing::Level1Hq::poll(const std::vector<std::string>& codes, bool validate, std::vector<Quote> &out_quotes) {
     // randomly select a service address
     if (svc_address_.empty()) {
         spdlog::error("No service addresses available.");
@@ -217,7 +217,7 @@ void lueing::Level1Hq::poll(const std::vector<std::string>& codes, bool validate
     try {
         auto json_response = nlohmann::json::parse(r.text);
         for (const auto& item : json_response["data"]) {
-            StockQuote quote{};
+            Quote quote{};
             quote.price = item.value("lastPrice", 0.0);
             quote.volume = item.value("amount", 0LL);
             quote.turnover = item.value("money", 0.0);
@@ -226,10 +226,20 @@ void lueing::Level1Hq::poll(const std::vector<std::string>& codes, bool validate
             quote.low = item.value("low", 0.0);
             quote.pre_close = item.value("preClose", 0.0);
             quote.time = item.value("time", 0LL);
-            strcpy(quote.code, item.value("code", "").c_str());
+            quote.code = item.value("code", "");
             out_quotes.push_back(quote);
         }
     } catch (const std::exception& e) {
         spdlog::error("JSON parsing error: {}", e.what());
     }
+}
+
+lueing::Quote lueing::Level1Hq::get_latest_quote(const std::string &code) {
+    std::vector<Quote> out_quotes;
+    std::vector<std::string> codes = {code};
+    poll(codes, false, out_quotes);
+    if (!out_quotes.empty()) {
+        return out_quotes.back();
+    }
+    throw std::runtime_error("Failed to get latest quote");
 }

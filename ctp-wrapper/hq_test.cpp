@@ -21,7 +21,7 @@ TEST(HQTest, main) {
 
 TEST(HQTest, level1) {
     auto config = lueing::CreateCtpConfig("config-sample.yaml");
-    std::vector<lueing::StockQuote> out_quotes;
+    std::vector<lueing::Quote> out_quotes;
 
     lueing::Level1Hq level1_hq(config);
     level1_hq.poll({"sh000852"}, false, out_quotes);

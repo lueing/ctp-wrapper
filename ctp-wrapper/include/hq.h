@@ -103,7 +103,7 @@ namespace lueing {
 
     typedef std::shared_ptr<CtpHq> CtpHqPtr;
 
-    struct StockQuote {
+    struct Quote {
         double price;
         long long volume;
         double turnover;
@@ -112,7 +112,7 @@ namespace lueing {
         double low;
         double pre_close;
         long long time;
-        char code[16];
+        std::string code;
     };
 
     class Level1Hq {
@@ -122,7 +122,9 @@ namespace lueing {
         explicit Level1Hq(const CtpConfigPtr& config);
         ~Level1Hq();
     public:
-        void poll(const std::vector<std::string>& codes, bool validate, std::vector<StockQuote> &out_quotes);
+        void poll(const std::vector<std::string>& codes, bool validate, std::vector<Quote> &out_quotes);
+        // 获取单个合约的最新行情
+        Quote get_latest_quote(const std::string& code);
     };
 
 } // namespace lueing
