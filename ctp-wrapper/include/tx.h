@@ -664,6 +664,16 @@ namespace lueing {
         void OnRspQryRiskSettleProductStatus(CThostFtdcRiskSettleProductStatusField *pRiskSettleProductStatus,
                                              CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
     };
+    
+    struct TxUnit {
+        std::string contract;
+        int position;
+        double price;
+        double last_price;
+        bool open_signal;
+        bool close_signal;
+        long long check_timestamp;
+    };
 
     class CtpTx {
     private:
