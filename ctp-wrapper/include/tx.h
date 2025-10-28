@@ -673,6 +673,14 @@ namespace lueing {
         bool open_signal;
         bool close_signal;
         long long check_timestamp;
+
+        int amt;
+        int stop_loss;
+        int stop_win;
+        int x_interval;
+        int open_timeout;
+        float target_price;
+        bool fake_x;
     };
 
     class CtpTx {
