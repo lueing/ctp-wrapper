@@ -31,7 +31,7 @@ void lueing::CtpTxHandler::CreateTxContext()
     if (nullptr != user_tx_api_) {
         return;
     }
-    user_tx_api_ = CThostFtdcTraderApi::CreateFtdcTraderApi("./flow-tx");
+    user_tx_api_ = CThostFtdcTraderApi::CreateFtdcTraderApi("./flow-tx/");
     user_tx_api_->RegisterSpi(this);
     user_tx_api_->SubscribePrivateTopic(THOST_TERT_QUICK);
     user_tx_api_->SubscribePublicTopic(THOST_TERT_QUICK);
@@ -78,6 +78,17 @@ void lueing::CtpTxHandler::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserL
         pRspUserLogin->BrokerID,
         pRspUserLogin->UserID,
         pRspUserLogin->SystemName));
+    // 确认结算单
+    CThostFtdcSettlementInfoConfirmField Confirm{};
+
+    strcpy(Confirm.BrokerID, pRspUserLogin->BrokerID);
+    strcpy(Confirm.InvestorID, pRspUserLogin->UserID);
+    int result = user_tx_api_->ReqSettlementInfoConfirm(&Confirm, config_->tx_request_id.fetch_add(1));
+    if (result == 0) {
+        spdlog::info(fmt::format("[TX] Confirm success."));
+    } else {
+        spdlog::info(fmt::format("[TX] Confirm fail."));
+    }
     events_.Notify(EVENT_TX_LOGIN);
 }
 
