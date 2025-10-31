@@ -19,7 +19,7 @@ lueing::CtpTxHandler::CtpTxHandler(CtpConfigPtr config) : config_(std::move(conf
 
 lueing::CtpTxHandler::~CtpTxHandler()
 {
-    if (nullptr != user_tx_api_) {
+    if (nullptr == user_tx_api_) {
         return;
     }
     user_tx_api_->Release();
