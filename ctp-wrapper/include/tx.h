@@ -676,7 +676,8 @@ namespace lueing {
 
         int amt;
         int stop_loss;
-        int stop_win;
+        int current_stop_win;
+        int last_stop_win;
         int x_interval;
         int open_timeout;
         float target_price;
