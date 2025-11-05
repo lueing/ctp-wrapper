@@ -4,11 +4,11 @@ client_access:
   # 用户代码
   UserID: "5601"
   # 用户端产品信息
-  UserProductInfo: "client_xxxxx_1.0.0"
+  UserProductInfo: "client_1.0.0"
   # 认证码
   AuthCode: ""
   # App代码
-  AppID: "client_xxxxx_1.0.0"
+  AppID: "client_1.0.0"
 
 user_access:
   # 交易日

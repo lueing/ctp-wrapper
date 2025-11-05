@@ -7,8 +7,8 @@ lueing::CtpTx::CtpTx(CtpConfigPtr config) : tx_handler_(std::move(config))
     tx_handler_.CreateTxContext();
 }
 
-double lueing::CtpTx::Order(const std::string& contract, lueing::TxDirection direction, int amt) {
-    return tx_handler_.Order(contract, direction, amt);
+double lueing::CtpTx::Order(const std::string &exchange, const std::string &contract, TxDirection direction, double price, int amt) {
+    return tx_handler_.Order(exchange, contract, direction, price, amt);
 }
 
 lueing::CtpTx::~CtpTx() = default;
@@ -92,25 +92,27 @@ void lueing::CtpTxHandler::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserL
     events_.Notify(EVENT_TX_LOGIN);
 }
 
-double lueing::CtpTxHandler::Order(const std::string &contract, lueing::TxDirection direction, int amt) {
+double lueing::CtpTxHandler::Order(const std::string &exchange, const std::string &contract, lueing::TxDirection direction, double price, int amt) {
     CThostFtdcInputOrderField ord = {};
     int orderRef = config_->tx_request_id.fetch_add(1);
-    double price = -1;
+    double avg = -1;
 
     strcpy(ord.BrokerID, config_->m_userPrincipal.BrokerID);
     strcpy(ord.InvestorID, config_->m_userPrincipal.reserve1);
     strcpy(ord.InstrumentID, contract.c_str());
     strcpy(ord.UserID, config_->m_userPrincipal.UserID);
+    strcpy(ord.ExchangeID, exchange.c_str());
     sprintf(ord.OrderRef, "%d", orderRef);
+    ord.RequestID = config_->tx_request_id.fetch_add(1);
 
-    ord.OrderPriceType = THOST_FTDC_OPT_AnyPrice;
+    ord.OrderPriceType = THOST_FTDC_OPT_LimitPrice;
     ord.Direction = direction;
     ord.CombOffsetFlag[0] = THOST_FTDC_OF_Open;
     ord.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
-    ord.LimitPrice = 0;                                  // 价格, 可以不填
+    ord.LimitPrice = price;
     ord.VolumeTotalOriginal = amt;
-    ord.TimeCondition = THOST_FTDC_TC_IOC;               // 立即完成，否则撤销
-    ord.VolumeCondition = THOST_FTDC_VC_CV;              // 全部数量
+    ord.TimeCondition = THOST_FTDC_TC_GFD;               // 当日有效
+    ord.VolumeCondition = THOST_FTDC_VC_AV;              // 任何数量
     ord.MinVolume = 1;
     ord.ContingentCondition = THOST_FTDC_CC_Immediately; //立即
     ord.ForceCloseReason = THOST_FTDC_FCC_NotForceClose; //非强平
@@ -132,15 +134,15 @@ double lueing::CtpTxHandler::Order(const std::string &contract, lueing::TxDirect
             total_price += trade.Price * trade.Volume;
         }
         if (total_volume > 0) {
-            price = total_price / total_volume;
+            avg = total_price / total_volume;
         }
     }    
 
     // round to 2 decimal places
-    if (price > 0) {
-        price = std::round(price * 100) / 100.0;
+    if (avg > 0) {
+        avg = std::round(price * 100) / 100.0;
     }
-    return price;
+    return avg;
 }
 
 void lueing::CtpTxHandler::OnRtnTrade(CThostFtdcTradeField *pTrade) {

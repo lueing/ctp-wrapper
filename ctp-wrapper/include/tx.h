@@ -31,7 +31,7 @@ namespace lueing {
     public:
         void CreateTxContext();
 
-        double Order(const std::string &contract, TxDirection direction, int amt);       
+        double Order(const std::string &exchange, const std::string &contract, TxDirection direction, double price, int amt);
 
     public:
         /// 当客户端与交易后台建立起通信连接时（还未登录前），该方法被调用。
@@ -694,7 +694,7 @@ namespace lueing {
         ~CtpTx();
 
     public:
-        double Order(const std::string &contract, TxDirection direction, int amt);
+        double Order(const std::string &exchange, const std::string &contract, TxDirection direction, double price, int amt);
     };
 }
 
