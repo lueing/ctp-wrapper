@@ -681,6 +681,8 @@ namespace lueing {
         int x_interval;
         int open_timeout;
         float target_price;
+        int trend; /* judged by people: 0 - call, 1 - put, -1 - unknown */
+
         bool fake_x;
     };
 
