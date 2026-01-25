@@ -127,6 +127,8 @@ namespace lueing {
         Quote get_latest_quote(const std::string& code);
     };
 
+    typedef std::shared_ptr<Level1Hq> Level1HqPtr;
+
 } // namespace lueing
 
 #endif // LUEING_DATA_CTP_HQ_H

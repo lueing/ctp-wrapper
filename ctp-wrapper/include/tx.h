@@ -698,6 +698,8 @@ namespace lueing {
     public:
         double Order(const std::string &exchange, const std::string &contract, TxDirection direction, double price, int amt);
     };
+
+    typedef std::shared_ptr<CtpTx> CtpTxPtr;
 }
 
 #endif // LUEING_CTP_TX_H
