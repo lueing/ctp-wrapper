@@ -664,27 +664,6 @@ namespace lueing {
         void OnRspQryRiskSettleProductStatus(CThostFtdcRiskSettleProductStatusField *pRiskSettleProductStatus,
                                              CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
     };
-    
-    struct TxUnit {
-        std::string contract;
-        int position;
-        double price;
-        double last_price;
-        bool open_signal;
-        bool close_signal;
-        long long check_timestamp;
-
-        int amt;
-        int stop_loss;
-        int current_stop_win;
-        int last_stop_win;
-        int x_interval;
-        int open_timeout;
-        float target_price;
-        int trend; /* judged by people: 0 - call, 1 - put, -1 - unknown */
-
-        bool fake_x;
-    };
 
     class CtpTx {
     private:
