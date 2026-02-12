@@ -145,8 +145,9 @@ lueing::CtpTxHandler::Order(const std::string &exchange, const std::string &cont
 
     // round to 2 decimal places
     if (avg > 0) {
-        avg = std::round(price * 100) / 100.0;
+        avg = std::round(avg * 100) / 100.0;
     }
+    spdlog::info(fmt::format("[TX] 合约:{} 数量:{} 成交均价: {}", contract, amt, avg));
     return avg;
 }
 
@@ -154,7 +155,7 @@ void lueing::CtpTxHandler::OnRtnTrade(CThostFtdcTradeField *pTrade) {
     if (nullptr == pTrade) {
         return;
     }
-    spdlog::info(fmt::format("[TX] 成交，合约:{} 数量:{} 价格:{}", pTrade->InstrumentID, pTrade->Volume, pTrade->Price));
+    spdlog::info(fmt::format("[TX] 逐笔成交，合约:{} 数量:{} 价格:{}", pTrade->InstrumentID, pTrade->Volume, pTrade->Price));
     trade_data_[pTrade->OrderRef].push_back(*pTrade);
     if (trade_data_.contains(pTrade->OrderRef)) {
         events_.Notify(pTrade->InstrumentID);
