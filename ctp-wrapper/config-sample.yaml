@@ -44,3 +44,10 @@ connect_info:
   level1_hq_services:
     - "http://127.0.0.1:8083/now"
 
+
+limit:
+  fake_x: 0
+  stop_loss: -3.3
+  stop_profit: 6.6
+  amt: 1
+  x_times: 3

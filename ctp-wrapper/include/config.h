@@ -19,6 +19,11 @@ namespace lueing
         std::atomic_int32_t tx_request_id;
 
         std::vector<std::string> level1_hq_services;
+        int fake_x;
+        float stop_loss;
+        float stop_profit;
+        int amt;
+        int x_times;
     };
     typedef struct CtpConfig CtpConfig;
     typedef std::shared_ptr<CtpConfig> CtpConfigPtr;
