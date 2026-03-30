@@ -170,7 +170,10 @@ void lueing::CtpTxHandler::OnRtnOrder(CThostFtdcOrderField *pOrder) {
 
 // Empty implementations for all CThostFtdcTraderSpi methods
 // void lueing::CtpTxHandler::OnFrontConnected() {}
-void lueing::CtpTxHandler::OnFrontDisconnected(int nReason) {}
+void lueing::CtpTxHandler::OnFrontDisconnected(int nReason)
+{
+    spdlog::warn(fmt::format("[TX][交易接口] Front disconnected, reason: {}", nReason));
+}
 
 void lueing::CtpTxHandler::OnHeartBeatWarning(int nTimeLapse) {}
 

@@ -115,6 +115,7 @@ void lueing::CtpHqHandler::OnFrontConnected()
 
 void lueing::CtpHqHandler::OnFrontDisconnected(int nReason)
 {
+    spdlog::warn(fmt::format("[行情接口][断开...], 错误码: {}", nReason));
 }
 
 void lueing::CtpHqHandler::OnHeartBeatWarning(int nTimeLapse)
