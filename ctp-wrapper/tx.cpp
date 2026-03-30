@@ -42,7 +42,7 @@ void lueing::CtpTxHandler::CreateTxContext() {
 void lueing::CtpTxHandler::OnFrontConnected() {
     int result = user_tx_api_->ReqAuthenticate(&config_->m_clientPrincipal, config_->tx_request_id.fetch_add(1));
     if (0 == result) {
-        spdlog::info(fmt::format("[TX] FrontConnected and invoke check client success."));
+        spdlog::info(fmt::format("[TX][交易接口] FrontConnected and invoke check client success."));
     } else {
         spdlog::error(fmt::format("[TX] FrontConnected but invoke check client failed."));
     }
@@ -60,7 +60,7 @@ void lueing::CtpTxHandler::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRs
     // => 客户端认证成功后，发起登录请求
     int result = user_tx_api_->ReqUserLogin(&config_->m_userPrincipal, config_->tx_request_id.fetch_add(1));
     if (0 == result) {
-        spdlog::info(fmt::format("[TX] Invoke user login success."));
+        spdlog::info(fmt::format("[TX][交易接口] Invoke user login success."));
     } else {
         spdlog::error(fmt::format("[TX] Invoke user login failed."));
     }
@@ -70,11 +70,11 @@ void lueing::CtpTxHandler::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserL
                                           int nRequestID, bool bIsLast) {
     if (pRspInfo->ErrorID != 0) {
         std::string error_msg = gbk_to_utf8_converter_.GBK2UTF8(pRspInfo->ErrorMsg);
-        spdlog::error(fmt::format("[TX] User login failed. ErrorID=[{}], ErrorMsg=[{}]", pRspInfo->ErrorID, error_msg));
+        spdlog::error(fmt::format("[TX][交易接口] User login failed. ErrorID=[{}], ErrorMsg=[{}]", pRspInfo->ErrorID, error_msg));
         return;
     }
     spdlog::info(fmt::format(
-            "[TX] User login success. TradingDay=[{}], LoginTime=[{}], BrokerID=[{}], UserID=[{}], SystemName=[{}]",
+            "[TX][交易接口] User login success. TradingDay=[{}], LoginTime=[{}], BrokerID=[{}], UserID=[{}], SystemName=[{}]",
             pRspUserLogin->TradingDay,
             pRspUserLogin->LoginTime,
             pRspUserLogin->BrokerID,
@@ -87,7 +87,7 @@ void lueing::CtpTxHandler::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserL
     strcpy(Confirm.InvestorID, pRspUserLogin->UserID);
     int result = user_tx_api_->ReqSettlementInfoConfirm(&Confirm, config_->tx_request_id.fetch_add(1));
     if (result == 0) {
-        spdlog::info(fmt::format("[TX] Confirm success."));
+        spdlog::info(fmt::format("[TX][交易接口] 结算单确认 success."));
     } else {
         spdlog::info(fmt::format("[TX] Confirm fail."));
     }
